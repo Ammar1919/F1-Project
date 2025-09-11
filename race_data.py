@@ -77,7 +77,7 @@ def telemetry_plot(year, gp, ses, driver):
     ax.legend()
     plt.show()
 
-def get_telemetry(year, gp, ses, driver):
+def get_fastest_lap_telemetry(year, gp, ses, driver):
     lap = get_lap(year, gp, ses, driver)
     car_data = lap.get_car_data().add_distance()
     telemetry = lap.telemetry.add_distance()
@@ -85,4 +85,44 @@ def get_telemetry(year, gp, ses, driver):
     telemetry.drop('DistanceToDriverAhead', axis=1, inplace=True)
     return telemetry
 
-# GPS data is too noisy, cannot reliably calculate acceleration
+def get_session_stints(year, gp, driver, ses):
+    session = f1.get_session(year, gp, ses)
+    session.load()
+    weather_data = session.weather_data
+    laps = session.laps.pick_drivers(driver)
+    laps = laps[["Time", "Stint", "LapNumber", "Compound", "TyreLife", "Deleted", "DeletedReason"]]
+
+    def find_closest_weather(lap_time):
+        if pd.isna(lap_time):
+            return pd.Series([np.nan] * len(weather_data.columns))
+        
+        time_diffs = abs(weather_data['Time'] - lap_time)
+        within_minute = time_diffs <= pd.Timedelta(minutes=1)
+        if within_minute.any():
+            closest_idx = time_diffs[within_minute].idxmin()
+            return weather_data.loc[closest_idx]
+        else:
+            return pd.Series([np.nan] * len(weather_data.columns),
+                            index=weather_data.columns)
+    
+    weather_matches = laps['Time'].apply(find_closest_weather)
+    weather_cols_to_add = weather_matches.drop('Time', axis=1, errors='ignore')        
+    result = pd.concat([laps, weather_cols_to_add], axis=1)
+
+    return result
+
+def get_wknd_stints(year, gp, driver):
+    fp1 = get_session_stints(year, gp, driver, "FP1")
+    fp2 = get_session_stints(year, gp, driver, "FP2")
+    fp_stints = pd.concat([fp1, fp2])
+    return fp_stints
+    
+
+if __name__ == "__main__":
+    year = 2023
+    gp = "Bahrain"
+    driver = "ALO"
+    stints = get_wknd_stints(year, gp, driver)
+    print(len(stints[stints["Humidity"].isna()]))
+
+
