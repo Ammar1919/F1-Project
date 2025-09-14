@@ -119,10 +119,11 @@ def get_wknd_stints(year, gp, driver):
     
 
 if __name__ == "__main__":
-    year = 2023
-    gp = "Bahrain"
+    year = 2024
+    gp = "Canada"
     driver = "ALO"
     stints = get_wknd_stints(year, gp, driver)
     print(len(stints[stints["Humidity"].isna()]))
 
+# Functions to store stint data in Supabase
 
