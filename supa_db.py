@@ -3,6 +3,9 @@ import supabase
 from supabase import create_client, Client
 from datetime import datetime
 from typing import TypedDict
+from dotenv import load_dotenv
+
+load_dotenv()
 
 url: str = os.environ.get("SUPABASE_URL")
 key: str = os.environ.get("SUPABASE_KEY")
@@ -15,7 +18,7 @@ class DriverData(TypedDict):
 
 class SessionData(TypedDict):
     event: str
-    date: datetime
+    date: str
     session_type: str
     weather_type: str
 
@@ -30,19 +33,19 @@ class LapData(TypedDict):
     stint_id: int
     weather_id: int
     lap_number: int
-    lap_time: datetime
+    lap_time: float
     tyre_age: int
-    sector1_time: datetime
-    sector2_time: datetime
-    sector3_time: datetime
+    sector1_time: float
+    sector2_time: float
+    sector3_time: float
 
 class WeatherData(TypedDict):
     session_id: int
-    time: datetime
+    time: str
     air_temp: float
     track_temp: float
     pressure: float
-    rainfall: bool
+    rainfall: str
     humidity: float
     wind_direction: int
     wind_speed: float
