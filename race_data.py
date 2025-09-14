@@ -11,6 +11,10 @@ import pandas as pd
 from scipy.signal import savgol_filter
 import warnings
 
+from supa_db import DriverData, SessionData, StintData, LapData, WeatherData
+from database_service import F1Database as db
+
+
 # Global variables for now
 
 # Function that gets lap (get_session, race weekend, event), get_driver, get_fastest_lap, etc.
@@ -125,5 +129,5 @@ if __name__ == "__main__":
     stints = get_wknd_stints(year, gp, driver)
     print(len(stints[stints["Humidity"].isna()]))
 
-# Functions to store stint data in Supabase
+# Manipulate current functions to store in Supabase as we go
 
