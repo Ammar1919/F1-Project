@@ -29,6 +29,7 @@ class F1Database:
                 .select("id, event, session_type")
                 .eq("event", session_data["event"])
                 .eq("session_type", session_data["session_type"])
+                .eq("year", session_data["year"])
                 .execute()
             )
             if len(response.data) > 0:
@@ -163,6 +164,7 @@ class F1Database:
                 return []
             
             # Get all sessions for this event and year
+            print(f"Comparison event: {event} and year: {year}")
             sessions_response = (
                 f1_db.table("sessions")
                 .select("id, session_type, weather_type, date")
@@ -180,7 +182,7 @@ class F1Database:
                 # Get stints for this driver in this session
                 stints_response = (
                     f1_db.table("stints")
-                    .select("id, stint_number, tyre_compound, initial_tyre_age")
+                    .select("id, stint_number, tyre_compound, initial_tyre_age, num_laps")
                     .eq("driver_id", driver_id)
                     .eq("session_id", session["id"])
                     .order("stint_number")
@@ -227,7 +229,7 @@ class F1Database:
             # Get stints for this driver in this session
             stints_response = (
                 f1_db.table("stints")
-                .select("id, stint_number, tyre_compound, initial_tyre_age")
+                .select("id, stint_number, tyre_compound, initial_tyre_age, num_laps")
                 .eq("driver_id", driver_id)
                 .eq("session_id", session["id"])
                 .order("stint_number")
