@@ -100,7 +100,11 @@ def store_session_stints(year: int, gp: str, driver: str, ses: str):
 
     # Store session
     session_data: SessionData = {
-        "event": gp, "date": date.isoformat(), "session_type": ses, "weather_type": event_weather
+        "event": gp, 
+        "date": date.isoformat(), 
+        "session_type": ses, 
+        "weather_type": event_weather,
+        "year": year
     }
     print(type(gp))
     print(type(date.isoformat()))
@@ -216,8 +220,9 @@ def store_weekend_data(year: int, gp: str, driver: str):
     print(f"Stored complete weekend data for {driver} at {gp} {year}")
 
 if __name__ == "__main__":
-    year = 2024
+    year = 2022
     gp = "Bahrain"
-    driver = "ALO"
+    driver = "VER"
+    
     store_weekend_data(year, gp, driver)
-
+    

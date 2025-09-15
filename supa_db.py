@@ -21,6 +21,7 @@ class SessionData(TypedDict):
     date: str
     session_type: str
     weather_type: str
+    year: int
 
 class StintData(TypedDict):
     session_id: int
