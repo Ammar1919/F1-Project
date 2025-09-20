@@ -141,19 +141,18 @@ def get_cleaned_weekend_data(driver_data, event, year):
     cleaned_laps = []
     for stint in all_stints:
         print(stint)
-        if stint['num_laps'] < 3:
+        if stint['num_laps'] < 5:
             continue
         laps = db.get_stint_laps(stint['id'])
-        if len(laps) == 3:
-            for lap in laps:
-                lap['stint_number'] = stint['stint_number']
-                lap['tyre_compound'] = stint['tyre_compound']
-                lap['session_type'] = stint['session_type']
-                cleaned_laps.append(lap)
-            continue
         lap_times = [lap['lap_time'] for lap in laps]
-        fastest_idx = np.argmin(lap_times)
-        selected_laps = laps[fastest_idx:]
+        
+        median_time = np.median(lap_times)
+        threshold = 3.0
+
+        selected_laps = [lap for lap in laps if lap['lap_time'] <= median_time + threshold]
+
+        if len(selected_laps) < 2:
+            continue
         
         for lap in selected_laps:
             lap['stint_number'] = stint['stint_number']
@@ -165,11 +164,22 @@ def get_cleaned_weekend_data(driver_data, event, year):
 
 if __name__ == "__main__":
     year = 2023
-    gp = "Bahrain"
-    driver = "ALO"
+    gp = "Saudi Arabia"
+    driver = "SAI"
     
     store_weekend_data(year, gp, driver)
 
-    # Stored for NOR, VER, LEC, ALO
+# Stored for NOR, VER, LEC, ALO
 
-    
+# NOR: Bahrain 2023, Saudi Arabia 2023
+# VER: Bahrain 2023, Saudi Arabia 2023
+# LEC: Bahrain 2023, Saudi Arabia 2023
+# ALO: Bahrain 2023, Saudi Arabia 2023
+# SAI: Bahrain 2023, Saudi Arabia 2023
+
+# Target data distribution per weekend:
+# SOFT compound: 20-25 laps (2-3 stints)
+# MEDIUM compound: 20-25 laps (2-3 stints)  
+# HARD compound: 15-20 laps (1-2 stints if available)
+# Total: 55-70 laps per driver per weekend
+
