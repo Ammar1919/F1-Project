@@ -120,8 +120,6 @@ def store_laps(laps, session_id, stint_id, session):
         
         db.store_lap(lap_data)
     
-    print(f"Successfully stored {len(laps)} laps for {driver} in {gp} {year}")
-
 def filter_laps(laps):
     return laps.loc[(laps['Deleted'] == False) &
                          (laps['LapTime'].notna()) &
@@ -149,6 +147,15 @@ def get_cleaned_weekend_data(driver_data, event, year):
         median_time = np.median(lap_times)
         threshold = 3.0
 
+        for lap in laps:
+            lap = add_weather_to_lap(lap)
+        prev_lap = laps[0]
+        for i in range(1, len(laps)):
+            lap = laps[i]
+            lap = add_lap_time_delta(lap, prev_lap['lap_time'])
+            lap = add_weather_rate_change(lap, prev_lap)
+            prev_lap = lap
+
         selected_laps = [lap for lap in laps if lap['lap_time'] <= median_time + threshold]
 
         if len(selected_laps) < 2:
@@ -158,24 +165,62 @@ def get_cleaned_weekend_data(driver_data, event, year):
             lap['stint_number'] = stint['stint_number']
             lap['tyre_compound'] = stint['tyre_compound']
             lap['session_type'] = stint['session_type']
+            lap = add_weather_to_lap(lap)
             cleaned_laps.append(lap)
 
     return pd.DataFrame(cleaned_laps)
 
+def add_lap_time_delta(lap, prev_lap_time):
+    lap['lap_time_delta'] = lap['lap_time'] - prev_lap_time
+    return lap
+
+def add_weather_rate_change(lap, prev_lap):
+    if lap and prev_lap:
+        lap['air_temp_change'] = lap['air_temp'] - prev_lap['air_temp']
+        lap['track_temp_change'] = lap['track_temp'] - prev_lap['track_temp']
+        lap['humidity_change'] = lap['humidity'] - prev_lap['humidity']
+    else:
+        fields = ['air_temp_change', 'track_temp_change', 'humidity_change']
+        for field in fields:
+            lap[field] = None
+    return lap
+
+def add_weather_to_lap(lap):
+    weather_id = lap['weather']
+    weather = db.get_lap_weather(weather_id)
+
+    if weather:
+        lap['weather_time'] = weather['time']
+        lap['air_temp'] = weather['air_temp']
+        lap['track_temp'] = weather['track_temp']
+        lap['pressure'] = weather['pressure']
+        lap['rainfall'] = weather['rainfall']
+        lap['humidity'] = weather['humidity']
+        lap['wind_direction'] = weather['wind_direction']
+        lap['wind_speed'] = weather['wind_speed']
+    else:
+        weather_fields = ['weather_time', 'air_temp', 'track_temp', 'pressure', 'rainfall', 'humidity', 'wind_direction', 'wind_speed']
+        for field in weather_fields:
+            lap[field] = None
+    return lap
+
+
+
 if __name__ == "__main__":
-    year = 2023
-    gp = "Saudi Arabia"
-    driver = "SAI"
     
-    store_weekend_data(year, gp, driver)
+    store_weekend_data(2023, "Australia", "SAI")
 
-# Stored for NOR, VER, LEC, ALO
+    store_weekend_data(2023, "Miami", "SAI")
 
-# NOR: Bahrain 2023, Saudi Arabia 2023
-# VER: Bahrain 2023, Saudi Arabia 2023
-# LEC: Bahrain 2023, Saudi Arabia 2023
-# ALO: Bahrain 2023, Saudi Arabia 2023
-# SAI: Bahrain 2023, Saudi Arabia 2023
+
+
+# Stored for NOR, VER, LEC, ALO, SAI
+
+# NOR: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+# VER: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+# LEC: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+# ALO: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+# SAI: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
 
 # Target data distribution per weekend:
 # SOFT compound: 20-25 laps (2-3 stints)
