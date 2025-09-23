@@ -12,7 +12,7 @@ from scipy.signal import savgol_filter
 import warnings
 import datetime
 
-from supa_db import DriverData, SessionData, StintData, LapData, WeatherData, create_session_data, create_stint_data, create_lap_data, create_weather_data
+from supa_db import DriverData, SessionData, StintData, LapData, WeatherData, create_driver_data, create_session_data, create_stint_data, create_lap_data, create_weather_data
 from database_service import F1Database as db
 
 pd.set_option('display.max_columns', None)
@@ -204,13 +204,21 @@ def add_weather_to_lap(lap):
             lap[field] = None
     return lap
 
-
+def get_all_weekend_laps(event, year):
+    drivers = db.get_all_drivers()
+    driver_dfs = []
+    for driver in drivers:
+        driver_data = create_driver_data(driver['driver_name'], driver['driver_number'], driver['team'])
+        driver_dfs.append(get_cleaned_weekend_data(driver_data, event, year))
+    all_weekend_laps = pd.concat(driver_dfs, ignore_index=True) ## issue in concatenation: objects are lists and can only concat Series and DFs
+    return all_weekend_laps
 
 if __name__ == "__main__":
     
-    store_weekend_data(2023, "Australia", "SAI")
-
-    store_weekend_data(2023, "Miami", "SAI")
+    laps = get_all_weekend_laps("Miami", 2023)
+    laps = laps.sort_values(by="weather_time")
+    lap_times = laps['lap_time']
+    print(lap_times.tolist())
 
 
 

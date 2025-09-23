@@ -153,6 +153,23 @@ class F1Database:
         except Exception as e:
             print(f"Error getting driver ID for {driver_data['driver_name']}: {e}")
             return None
+    @staticmethod
+    def get_all_drivers() -> list:
+        """Retrieve all drivers from the database"""
+        try:
+            response = (
+                f1_db.table("drivers")
+                .select("*")
+                .execute()
+            )
+
+            if not response.data:
+                print(f"No drivers found")
+                return None
+            return response.data
+        except Exception as e:
+            print(f"Error in extracting all drivers: {e}")
+            return None
     
     @staticmethod
     def get_driver_stints(driver_data: DriverData, event: str, year: int) -> list:

@@ -53,6 +53,14 @@ class WeatherData(TypedDict):
     wind_direction: int
     wind_speed: float
 
+def create_driver_data(name, number, team):
+    driver_data: DriverData = {
+        "driver_name": name,
+        "driver_number": number,
+        "team": team
+    }
+    return driver_data
+
 def create_session_data(gp, date, ses, event_weather, year):
     session_data: SessionData = {
         "event": gp, 
