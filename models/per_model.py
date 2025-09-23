@@ -1,6 +1,6 @@
 from matplotlib import pyplot as plt
-from race_data import get_cleaned_weekend_data, get_all_weekend_laps
-from supa_db import DriverData
+from data_engine.race_data import get_cleaned_weekend_data, get_all_weekend_laps
+from db_utils.supa_db import DriverData
 import numpy as np
 import pandas as pd
 from xgboost import XGBRegressor

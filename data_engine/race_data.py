@@ -12,8 +12,8 @@ from scipy.signal import savgol_filter
 import warnings
 import datetime
 
-from supa_db import DriverData, SessionData, StintData, LapData, WeatherData, create_driver_data, create_session_data, create_stint_data, create_lap_data, create_weather_data
-from database_service import F1Database as db
+from db_utils.supa_db import DriverData, SessionData, StintData, LapData, WeatherData, create_driver_data, create_session_data, create_stint_data, create_lap_data, create_weather_data
+from db_utils.database_service import F1Database as db
 
 pd.set_option('display.max_columns', None)
 pd.set_option('display.width', None)

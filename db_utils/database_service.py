@@ -1,4 +1,4 @@
-from supa_db import f1_db, DriverData, SessionData, StintData, LapData, WeatherData
+from db_utils.supa_db import f1_db, DriverData, SessionData, StintData, LapData, WeatherData
 
 class F1Database:
     @staticmethod
