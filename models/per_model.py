@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error
 
 """
-
+                   
 Absolute Performance Model
 ==========================
 
@@ -51,8 +51,13 @@ def abs_performance_model(laps, compound):
     mse = mean_squared_error(y_test, y_pred)
     rmse = np.sqrt(mse)
 
+    mean_lap_time = y_test.mean()
+    rmse_percentage = (rmse / mean_lap_time) * 100
+
     print(f"MSE: {mse:.4f}")
     print(f"RMSE: {rmse:.4f}")
+    print(f"RMSE %: {rmse_percentage:.2f} %")
+    print(f"No. of laps: {len(y)}")
 
     feature_importance = pd.DataFrame({
         'feature': X.columns,
@@ -68,16 +73,15 @@ def time_based_split(X, y, test_size):
 
     X_train, X_test = X[:split_idx], X[split_idx:]
     y_train, y_test = y[:split_idx], y[split_idx:]
-
+     
     return X_train, X_test, y_train, y_test
 
 
 if __name__ == "__main__":
-
     event = "Miami"
     year = 2023
     all_weekend_laps = get_all_weekend_laps(event, year)
-    soft_per_model = abs_performance_model(all_weekend_laps, "SOFT")
+    soft_per_model = abs_performance_model(all_weekend_laps, "HARD")
 
 
 

@@ -215,10 +215,14 @@ def get_all_weekend_laps(event, year):
 
 if __name__ == "__main__":
     
-    laps = get_all_weekend_laps("Miami", 2023)
+    event = "Miami"
+    year = 2023
+    tyre = 'HARD'
+
+    laps = get_all_weekend_laps(event, year)
     laps = laps.sort_values(by="weather_time")
-    lap_times = laps['lap_time']
-    print(lap_times.tolist())
+    lap_times = laps.query(f"tyre_compound == '{tyre}'")["lap_time"]
+    print(lap_times.sort_values(ascending=False).tolist())
 
 
 
