@@ -46,7 +46,11 @@ def get_fastest_lap_telemetry(year, gp, ses, driver):
 
 def store_session_stints(year: int, gp: str, driver: str, ses: str):
     """Store session data, stints, and laps directly in database"""
-    session = f1.get_session(year, gp, ses)
+    try:
+        session = f1.get_session(year, gp, ses)
+    except Exception as e:
+        print(f"Exception in retrieving session: {e}")
+        return 
     session.load()
     weather_data = session.weather_data
     date = session.date.to_pydatetime()
@@ -64,6 +68,9 @@ def store_session_stints(year: int, gp: str, driver: str, ses: str):
     laps = session.laps.pick_drivers(driver)
     laps = filter_laps(laps)
     # Store driver if first session
+    if len(laps) == 0:
+        print(f"Driver did not take part in {gp, ses, year}")
+        return
     driver_number = laps.iloc[0]["DriverNumber"]
     team = laps.iloc[0]["Team"]
     driver_data: DriverData = {
@@ -132,6 +139,8 @@ def store_weekend_data(year: int, gp: str, driver: str):
     store_session_stints(year, gp, driver, "FP1")
     store_session_stints(year, gp, driver, "FP2")
     store_session_stints(year, gp, driver, "FP3")
+    store_session_stints(year, gp, driver, "Qualifying")
+    store_session_stints(year, gp, driver, "Race")
     print(f"Stored complete weekend data for {driver} at {gp} {year}")
 
 def get_cleaned_weekend_data(driver_data, event, year):
@@ -215,28 +224,30 @@ def get_all_weekend_laps(event, year):
 
 if __name__ == "__main__":
     
-    event = "Miami"
-    year = 2023
-    tyre = 'HARD'
+    event = "Japan"
+    year = 2025
 
-    laps = get_all_weekend_laps(event, year)
-    laps = laps.sort_values(by="weather_time")
-    lap_times = laps.query(f"tyre_compound == '{tyre}'")["lap_time"]
-    print(lap_times.sort_values(ascending=False).tolist())
+    store_weekend_data(year, event, "HAM")
+    store_weekend_data(year, event, "LEC")
 
 
+""" Stored for NOR, VER, LEC, ALO, SAI, HAM
 
-# Stored for NOR, VER, LEC, ALO, SAI
+NOR: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+VER: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+LEC: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+ALO: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+SAI: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
 
-# NOR: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
-# VER: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
-# LEC: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
-# ALO: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
-# SAI: Bahrain 2023, Saudi Arabia 2023, Australia 2023, Miami 2023
+LEC: Australia 2025, China 2025, Japan 2025, Bahrain 2025
+HAM: Australia 2025, China 2025, Japan 2025, Bahrain 2025
 
-# Target data distribution per weekend:
-# SOFT compound: 20-25 laps (2-3 stints)
-# MEDIUM compound: 20-25 laps (2-3 stints)  
-# HARD compound: 15-20 laps (1-2 stints if available)
-# Total: 55-70 laps per driver per weekend
 
+Target data distribution per weekend:
+SOFT compound: 20-25 laps (2-3 stints)
+MEDIUM compound: 20-25 laps (2-3 stints)  
+HARD compound: 15-20 laps (1-2 stints if available)
+Total: 55-70 laps per driver per weekend
+
+
+"""
