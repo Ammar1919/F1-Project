@@ -143,40 +143,50 @@ def store_weekend_data(year: int, gp: str, driver: str):
     store_session_stints(year, gp, driver, "Race")
     print(f"Stored complete weekend data for {driver} at {gp} {year}")
 
+def get_cleaned_stint_data(driver_data, stint):
+    cleaned_stint_laps = []
+    if stint['num_laps'] < 5:
+            return
+    laps = db.get_stint_laps(stint['id'])
+    lap_times = [lap['lap_time'] for lap in laps]
+    
+    median_time = np.median(lap_times)
+    threshold = 3.0
+
+    for lap in laps:
+        lap = add_weather_to_lap(lap)
+    prev_lap = laps[0]
+    for i in range(1, len(laps)):
+        lap = laps[i]
+        lap = add_lap_time_delta(lap, prev_lap['lap_time'])
+        lap = add_weather_rate_change(lap, prev_lap)
+        prev_lap = lap
+
+    selected_laps = [lap for lap in laps if lap['lap_time'] <= median_time + threshold]
+
+    if len(selected_laps) < 2:
+        return
+    
+    for lap in selected_laps:
+        lap['stint_number'] = stint['stint_number']
+        lap['tyre_compound'] = stint['tyre_compound']
+        lap['session_type'] = stint['session_type']
+        lap = add_weather_to_lap(lap)
+        cleaned_stint_laps.append(lap)
+    return cleaned_stint_laps
+
 def get_cleaned_weekend_data(driver_data, event, year):
     all_stints = db.get_driver_stints(driver_data, event, year)
     cleaned_laps = []
     for stint in all_stints:
-        print(stint)
-        if stint['num_laps'] < 5:
-            continue
-        laps = db.get_stint_laps(stint['id'])
-        lap_times = [lap['lap_time'] for lap in laps]
-        
-        median_time = np.median(lap_times)
-        threshold = 3.0
+        cleaned_laps += get_cleaned_stint_data(driver_data, stint)
+    return pd.DataFrame(cleaned_laps)
 
-        for lap in laps:
-            lap = add_weather_to_lap(lap)
-        prev_lap = laps[0]
-        for i in range(1, len(laps)):
-            lap = laps[i]
-            lap = add_lap_time_delta(lap, prev_lap['lap_time'])
-            lap = add_weather_rate_change(lap, prev_lap)
-            prev_lap = lap
-
-        selected_laps = [lap for lap in laps if lap['lap_time'] <= median_time + threshold]
-
-        if len(selected_laps) < 2:
-            continue
-        
-        for lap in selected_laps:
-            lap['stint_number'] = stint['stint_number']
-            lap['tyre_compound'] = stint['tyre_compound']
-            lap['session_type'] = stint['session_type']
-            lap = add_weather_to_lap(lap)
-            cleaned_laps.append(lap)
-
+def get_cleaned_session_data(driver_data, event, session, year):
+    all_stints = db.get_driver_stints_by_session(driver_data, event, year, session)
+    cleaned_laps = []
+    for stint in all_stints:
+        cleaned_laps += get_cleaned_stint_data(driver_data, stint)
     return pd.DataFrame(cleaned_laps)
 
 def add_lap_time_delta(lap, prev_lap_time):
@@ -224,12 +234,11 @@ def get_all_weekend_laps(event, year):
 
 if __name__ == "__main__":
     
-    event = "Japan"
+    event = "Australia"
     year = 2025
+    driver = create_driver_data("HAM", 44, "Ferrari")
 
-    store_weekend_data(year, event, "HAM")
-    store_weekend_data(year, event, "LEC")
-
+    wknd_laps = get_cleaned_weekend_data(driver, event, year)
 
 """ Stored for NOR, VER, LEC, ALO, SAI, HAM
 
