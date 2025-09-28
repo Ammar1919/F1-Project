@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib import colormaps
 
 colourmap = mpl.cm.plasma
 
@@ -42,7 +43,7 @@ def prepare_track_data(lap, metric='Speed'):
     
     return x, y, colour, segments
 
-def plot_track_map(lap, colour, segments, title, metric):
+def plot_track_map_base(lap, colour, segments, title, metric):
     fig, ax = plt.subplots(sharex=True, sharey=True, figsize=(12, 6.75))
     fig.suptitle(title, size=24, y=0.97)
 
@@ -54,15 +55,21 @@ def plot_track_map(lap, colour, segments, title, metric):
             linestyle='-', linewidth=16, zorder=0)
     
     # Plot coloured segments
-    norm = plt.Normalize(colour.min(), colour.max())
-    lc = LineCollection(segments, cmap=colourmap, norm=norm, linestyle='-', linewidth=5)
+    if metric == 'nGear':
+        cmap = colormaps['tab10']
+        norm = mpl.colors.BoundaryNorm(boundaries=np.arange(0.5, 9.5, 1), ncolors=cmap.N)
+    else:
+        cmap = colourmap  # Use the continuous colormap for other metrics
+        norm = plt.Normalize(colour.min(), colour.max())
+    
+    lc = LineCollection(segments, cmap=cmap, norm=norm, linestyle='-', linewidth=5)
     lc.set_array(colour)
     ax.add_collection(lc)
 
-    # Add colorbar
     cbaxes = fig.add_axes([0.25, 0.05, 0.5, 0.05])
-    normlegend = mpl.colors.Normalize(vmin=colour.min(), vmax=colour.max())
-    legend = mpl.colorbar.ColorbarBase(cbaxes, norm=normlegend, cmap=colourmap,
+    
+    # Use the same norm and cmap for the colorbar as for the plot
+    legend = mpl.colorbar.ColorbarBase(cbaxes, norm=norm, cmap=cmap,
                                     orientation='horizontal')
     
     # Set custom ticks based on metric
@@ -70,6 +77,10 @@ def plot_track_map(lap, colour, segments, title, metric):
         ticks = np.arange(0, 401, 50)
         legend.set_ticks(ticks)
         legend.set_ticklabels([f"{tick}" for tick in ticks])
+    elif metric == 'nGear':
+        gear_range = np.arange(int(colour.min()), int(colour.max())+1)
+        legend.set_ticks(gear_range)
+        legend.set_ticklabels([f"Gear {int(gear)}" for gear in gear_range])
     
     plt.show()
 
@@ -101,22 +112,16 @@ def plot_overlap_speed_trace_base(d1_name, d2_name, d1_lap, d2_lap, title, circu
 
     plt.show()
 
-
-def plot_fastest_lap_speed_track_map(driver, event, session, year):
-    # Convienience function for plotting fastest lap speed
-    lap = get_fastest_lap(driver, event, session, year)
-    title = f"{event} {session} {year} - {driver} - Fastest Lap: {lap["LapTime"]}"
-    plot_track_lap_metric(lap, "Speed", title)
-
-def plot_median_lap_speed_track_map(driver, event, session, year):
-    lap = get_median_lap(driver, event, session, year)
-    title = f"{event} {session} {year} - {driver} - Median Lap: {lap["LapTime"]}"
-    plot_track_lap_metric(lap, "Speed", title)
+def plot_track_map(driver, event, session, year, metric, lap_type):
+    lap_func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
+    lap = lap_func_map[lap_type](driver, event, session, year)
+    title = f"{event} {session} {year} - {driver} - {lap_type} Lap {metric}: {lap["LapTime"]}"
+    plot_track_lap_metric(lap, metric, title)
 
 def plot_track_lap_metric(lap, metric, title):
     # Generic function for plotting any lap with any metric
     x, y, colour, segments = prepare_track_data(lap, metric)
-    plot_track_map(lap, colour, segments, title, metric)
+    plot_track_map_base(lap, colour, segments, title, metric)
 
 def plot_fastest_overlap_speed_trace(d1_name, d2_name, event, session, year):
     d1_lap = get_fastest_lap(d1_name, event, session, year)
@@ -146,10 +151,6 @@ if __name__ == "__main__":
     session = "Race"
     year = 2025
     
-    plot_overlap_speed_traces("LEC", "HAM", event, session, year, "Median")
-    
-    # HAM median lap time for BAH 2025 Q = 1:31.219
-    # LEC median lap time for BAH 2025 Q = 1:31.056
-    # HAM fastest lap time for BAH 2025 Q = 1:30.772
-    # LEC fastest lap time for BAH 2025 Q = 1:30.175
- 
+
+    plot_track_map(driver, event, session, year, "nGear", "Median")
+
