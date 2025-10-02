@@ -1,41 +1,8 @@
 from data_engine.race_data import get_cleaned_weekend_data, get_cleaned_session_data
 import fastf1 as f1
 import numpy as np
-from visualizer.base_plots import plot_track_map_base, plot_overlay_speed_trace_base, plot_scatter_chart_base
-
-def get_fastest_lap(driver, session_obj):
-    laps = laps.pick_drivers(driver)
-    if session_obj.name == "Qualifying":
-        laps = get_q_session(laps)
-    return laps.pick_accurate().pick_fastest()
-
-def get_q_session(laps):
-    q1, q2, q3 = laps.split_qualifying_sessions()
-    if not q3.empty:
-        return q3
-    elif not q2.empty:
-        return q2
-    return q1
-
-def get_laps(driver, laps):
-    return laps.pick_drivers(driver).pick_wo_box().pick_not_deleted().pick_accurate()
-
-def get_median_lap(driver, session_obj):
-    laps = laps.pick_drivers(driver).pick_wo_box().pick_accurate()
-    if session_obj.name == "Qualifying":
-        laps = get_q_session(laps)
-    sorted_laps = laps.sort_values(by="LapTime")
-    median_idx = (len(sorted_laps)-1)//2
-    return sorted_laps.iloc[median_idx]
-
-def prepare_track_data(lap, metric='Speed'):
-    telemetry = lap.telemetry
-    x, y, colour = telemetry['X'], telemetry['Y'], telemetry[metric]
-    
-    points = np.array([x, y]).T.reshape(-1, 1, 2)
-    segments = np.concatenate([points[:-1], points[1:]], axis=1)
-    
-    return x, y, colour, segments
+from visualizer.base_plots import plot_track_map_base, plot_overlay_speed_trace_base, plot_scatter_chart_base, plot_single_trace_base
+from data_engine.vis_data import get_fastest_lap, get_median_lap, get_laps, prepare_track_data
 
 def plot_track_map(driver, event, session, year, metric, lap_type):
     lap_func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
@@ -52,7 +19,7 @@ def plot_track_lap_metric(lap, metric, title):
     x, y, colour, segments = prepare_track_data(lap, metric)
     plot_track_map_base(lap, colour, segments, title, metric)
 
-def plot_overlap_speed_traces(d1_name, d2_name, event, session, year, lap_type):
+def plot_overlay_speed_traces(d1_name, d2_name, event, session, year, lap_type):
     func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
 
     session_obj = f1.get_session(year, event, session)
@@ -66,7 +33,31 @@ def plot_overlap_speed_traces(d1_name, d2_name, event, session, year, lap_type):
 
     plot_overlay_speed_trace_base(d1_name, d2_name, d1_lap, d2_lap, title, circuit_info)
 
-def plot_scatter_chart(driver, event, session, year):
+def plot_throttle_input_track_map(driver, event, session, year, lap_type):
+    func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
+
+    session_obj = f1.get_session(year, event, session)
+    session_obj.load()
+
+    lap = func_map[lap_type](driver, session_obj)
+
+    title = f"{driver}'s throttle input for {lap_type} Lap in {session} - {event} - {year}"
+    plot_track_lap_metric(lap, "Throttle", title)
+
+def plot_throttle_input_trace(driver, event, session, year, lap_type):
+    func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
+
+    session_obj = f1.get_session(year, event, session)
+    session_obj.load()
+
+    lap = func_map[lap_type](driver, session_obj)
+
+    circuit_info = session_obj.get_circuit_info()
+    title = f"{driver}'s throttle input for {lap_type} Lap in {session} - {event} - {year}"
+
+    plot_single_trace_base(driver, lap, title, "Throttle", circuit_info)
+  
+def plot_laps_scatter_chart(driver, event, session, year):
     session_obj = f1.get_session(year, event, session)
     session_obj.load()
     laps = get_laps(driver, session_obj.laps)
@@ -79,6 +70,5 @@ if __name__ == "__main__":
     year = 2025
     
 
-    plot_scatter_chart(driver, event, session, year)
-
+    plot_overlay_speed_traces("HAM", "LEC", event, session, year, "Fastest")
     

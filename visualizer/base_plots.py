@@ -3,6 +3,7 @@ from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 import numpy as np
 from matplotlib import colormaps
+from matplotlib import colors 
 
 import fastf1 as f1
 
@@ -77,6 +78,35 @@ def plot_overlay_speed_trace_base(d1_name, d2_name, d1_lap, d2_lap, title, circu
 
     plt.show()
 
+def plot_single_trace_base(driver, lap, title, metric, circuit_info):
+    tel = lap.get_car_data().add_distance()
+    colour = 'red'
+
+    fig, ax = plt.subplots()
+    ax.plot(tel['Distance'], tel[metric], color=colour, label=driver)
+
+    distance_ticks = np.arange(0, tel['Distance'].max(), 100)
+    ax.set_xticks(distance_ticks)
+    
+    v_min = tel['Speed'].min()
+    v_max = tel['Speed'].max()
+
+    ax.vlines(x=circuit_info.corners['Distance'], ymin=v_min-20, ymax=v_max+20, linestyles='dotted', colors='grey')
+
+    for _, corner in circuit_info.corners.iterrows():
+        txt = f"{corner['Number']}{corner['Letter']}"
+        ax.text(corner['Distance'], v_min-25, txt, va='center_baseline', ha='center', size='small')
+
+    ax.set_xlabel('Distance in m')
+    ax.set_ylabel(metric)
+    ax.set_ylim(top=100)
+
+    ax.legend()
+    plt.suptitle(title)
+
+    plt.show()
+
+
 def plot_scatter_chart_base(driver, laps, title):
     x = np.array(laps["LapNumber"])
     y = np.array(laps["LapTime"].dt.total_seconds())
@@ -86,8 +116,8 @@ def plot_scatter_chart_base(driver, laps, title):
     colours = [tyre_dict.get(compound, "black") for compound in tyre_compounds]
 
     fig, ax = plt.subplots()
-    fig.patch.set_facecolor('grey')
-    ax.set_facecolor('grey')
+    fig.patch.set_facecolor('darkgrey')
+    ax.set_facecolor(colors.CSS4_COLORS['indigo'])
     plt.title(title, color='white')
     plt.xlabel("Lap Number", color='white')
     plt.ylabel("Lap Time (s)", color='white')
