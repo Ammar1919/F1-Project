@@ -129,3 +129,35 @@ def plot_scatter_chart_base(driver, laps, title):
     plt.scatter(x, y, c=colours)
     plt.show()
 
+def plot_tyre_strategies_base(d1_name, d2_name, stints, title, session):
+    fig, ax = plt.subplots()
+
+    for driver_stints in stints:
+        previous_stint_end = 0
+        for idx, row in driver_stints.iterrows():
+            compound_colour = f1.plotting.get_compound_color(row["Compound"], session=session)
+
+            plt.barh(
+                y=row["Driver"],
+                width=row["StintLength"],
+                left=previous_stint_end,
+                color=compound_colour,
+                edgecolor="black",
+                fill=True
+            )
+
+            previous_stint_end += row["StintLength"]
+    
+    plt.title(title)
+    plt.xlabel("Lap Number")
+    plt.grid(False)
+
+    ax.invert_yaxis()
+
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+    ax.spines['left'].set_visible(False)
+
+    plt.tight_layout()
+    plt.show()
+

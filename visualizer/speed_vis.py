@@ -1,8 +1,9 @@
 from data_engine.race_data import get_cleaned_weekend_data, get_cleaned_session_data
 import fastf1 as f1
 import numpy as np
-from visualizer.base_plots import plot_track_map_base, plot_overlay_speed_trace_base, plot_scatter_chart_base, plot_single_trace_base
+from visualizer.base_plots import plot_track_map_base, plot_overlay_speed_trace_base, plot_scatter_chart_base, plot_single_trace_base, plot_tyre_strategies_base
 from data_engine.vis_data import get_fastest_lap, get_median_lap, get_laps, prepare_track_data
+import fastf1.plotting
 
 def plot_track_map(driver, event, session, year, metric, lap_type):
     lap_func_map = {"Fastest": get_fastest_lap, "Median": get_median_lap}
@@ -61,14 +62,38 @@ def plot_laps_scatter_chart(driver, event, session, year):
     session_obj = f1.get_session(year, event, session)
     session_obj.load()
     laps = get_laps(driver, session_obj.laps)
+
     plot_scatter_chart_base(driver, laps, "")
+
+def get_driver_stints(driver, laps):
+    stints = laps[laps["Driver"] == driver][["Driver", "Stint", "Compound", "LapNumber"]]
+
+    stints = stints.groupby(['Stint', 'Compound']).agg({'LapNumber': 'count', 'Driver': 'first'}).reset_index()
+
+    stints = stints.rename(columns={"LapNumber": "StintLength"})
+    return stints
+
+def plot_tyre_strategies(d1_name, d2_name, event, session, year):
+    session_obj = f1.get_session(year, event, session)
+    session_obj.load()
+
+    d1_laps = get_laps(d1_name, session_obj.laps)
+    d2_laps = get_laps(d2_name, session_obj.laps)
+
+    d1_stints = get_driver_stints(d1_name, d1_laps)
+    d2_stints = get_driver_stints(d2_name, d2_laps)
+
+    title = f"{d1_name} and {d2_name} Tyre Strategies during {session} - {event} - {year}"
+
+    plot_tyre_strategies_base(d1_name, d2_name, [d1_stints, d2_stints], title, session_obj)
+
 
 if __name__ == "__main__":
     driver = "HAM"
-    event = "Bahrain"
+    event = "Australia"
     session = "Race"
     year = 2025
     
 
-    plot_overlay_speed_traces("HAM", "LEC", event, session, year, "Fastest")
+    plot_tyre_strategies("HAM", "LEC", event, session, year)
     
